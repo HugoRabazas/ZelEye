@@ -240,14 +240,14 @@ function groupDetail(r) {
   const kRows = r.ks.map((k) => {
     const s = k.stats, p10 = s.p10_power ?? (k.players.length >= 10 ? k.players[9] : null);
     return `<tr><td>${k.kingdom}</td><td>${fmt(s.total_power)}</td><td>${fmt(s.lords)}</td>
-      <td>${fmt(s.top1_power ?? k.players[0])}</td><td>${fmt(p10)}</td><td>${fmt(s.t5_lords)}</td><td>${fmt(s.merits)}</td>
+      <td>${fmt(s.top1_power ?? k.players[0])}</td><td>${fmt(p10)}</td><td>${fmt(s.merits)}</td>
       <td>${r.my != null ? (rankOf(r.my, k.players) ? '#' + rankOf(r.my, k.players) : '—') : '—'}</td></tr>`;
   }).join('');
   const top = r.ks.flatMap((k) => (k.top_names || []).map((t) => [...t, k.kingdom])).sort((a, b) => b[2] - a[2]).slice(0, 10);
   const topHtml = top.length
     ? `<table class="mini"><thead><tr><th>#</th><th>Lord</th><th>Alianza</th><th>Reino</th><th>Poder</th></tr></thead><tbody>${top.map((t, i) => `<tr><td>${i + 1}</td><td>${esc(t[0])}</td><td>${esc(t[1])}</td><td>${t[3]}</td><td>${fmt(t[2])}</td></tr>`).join('')}</tbody></table>`
     : '<p class="muted">Sin lista de jugadores para esta zona.</p>';
-  return `<div class="detail-grid"><div><h4>Reinos de la zona</h4><table class="mini"><thead><tr><th>Reino</th><th>Poder</th><th>Lords</th><th>Top 1</th><th>10º</th><th>T5</th><th>Méritos</th><th>Tu puesto</th></tr></thead><tbody>${kRows}</tbody></table></div>
+  return `<div class="detail-grid"><div><h4>Reinos de la zona</h4><table class="mini"><thead><tr><th>Reino</th><th>Poder</th><th>Lords</th><th>Top 1</th><th>10º</th><th>Méritos</th><th>Tu puesto</th></tr></thead><tbody>${kRows}</tbody></table></div>
     <div><h4>Top 10 conocido de la zona</h4>${topHtml}</div></div>`;
 }
 
@@ -260,7 +260,7 @@ function renderKingdoms(groupRows) {
     rows.push({
       r, k, ease: r.ease, kingdom: k.kingdom, label: r.label, first: r.first,
       total: s.total_power ?? null, lords: s.lords ?? null, top1: s.top1_power ?? k.players[0] ?? null,
-      p10: s.p10_power ?? (k.players.length >= 10 ? k.players[9] : null), t5: s.t5_lords ?? null, merits: s.merits ?? null,
+      p10: s.p10_power ?? (k.players.length >= 10 ? k.players[9] : null), merits: s.merits ?? null,
       growth: growth7d([`${k.zone}:${k.kingdom}`]), thr: r.thr,
       myRankK: rankOf(r.my, k.players), myRank: r.myRankTxt,
     });
@@ -268,7 +268,7 @@ function renderKingdoms(groupRows) {
   sortRows(rows, state.sort.kingdoms);
   $('#t-kingdoms tbody').innerHTML = rows.slice(0, 2000).map((x) => `<tr>
     <td>${easeBadge(x.ease)}</td><td>${x.kingdom}</td><td>${esc(x.label)}</td>
-    <td>${fmt(x.total)}</td><td>${fmt(x.lords)}</td><td>${fmt(x.top1)}</td><td>${fmt(x.p10)}</td><td>${fmt(x.t5)}</td><td>${fmt(x.merits)}</td>
+    <td>${fmt(x.total)}</td><td>${fmt(x.lords)}</td><td>${fmt(x.top1)}</td><td>${fmt(x.p10)}</td><td>${fmt(x.merits)}</td>
     <td>${pct(x.growth)}</td><td>${thrCell(x.r)}</td><td>${myCell(x.r, x.myRankK, null, null)}</td><td>${myCell(x.r, x.myRank, x.r.thr, x.r.thrKind)}</td></tr>`).join('')
     || '<tr><td colspan="12" class="muted">Ningún reino cumple los filtros.</td></tr>';
   syncSortHeaders('#t-kingdoms', state.sort.kingdoms);
@@ -357,8 +357,8 @@ function exportCSV() {
   let lines;
   if (state.view === 'kingdoms') {
     renderKingdoms(groups);
-    lines = [['ease', 'kingdom', 'zone_kingdoms', 'total_power', 'lords', 'top1_power', 'p10_power', 't5_lords', 'merits', 'zone_top10_threshold']]
-      .concat(state.lastKingdomRows.map((x) => [x.ease, x.kingdom, x.label, x.total, x.lords, x.top1, x.p10, x.t5, x.merits, x.thr]));
+    lines = [['ease', 'kingdom', 'zone_kingdoms', 'total_power', 'lords', 'top1_power', 'p10_power', 'merits', 'zone_top10_threshold']]
+      .concat(state.lastKingdomRows.map((x) => [x.ease, x.kingdom, x.label, x.total, x.lords, x.top1, x.p10, x.merits, x.thr]));
   } else {
     sortRows(groups, state.sort.groups);
     lines = [['ease', 'first_kingdom', 'last_kingdom', 'top10_threshold', 'threshold_kind', 'top1', 'total_power', 'avg_kingdom_power', 'max_kingdom_power', 'growth_7d', 'rivals_above_you', 'coverage']]

@@ -13,7 +13,7 @@ Turnstile, el token llega con 403 y el script termina sin datos en vez de intent
 Uso autorizado por el responsable de cod-tracker. Créditos a cod-tracker.com en la web.
 
 Salida (ignorada por git, la regenera el workflow):
-  data/stats/kingdoms_codtracker.csv      total_power, lords, top1_power, p10_power, t5_lords, merits por reino
+  data/stats/kingdoms_codtracker.csv      total_power, lords, top1_power, p10_power, merits por reino
   data/stats/top_players_codtracker.csv   kingdom, name, alliance, power (para el 10º exacto de la zona)
 
 Variables de entorno (todas opcionales):
@@ -117,7 +117,7 @@ def write_outputs(snapshot: dict) -> int:
     for kid, players in snapshot.items():
         if not isinstance(players, list) or not players:
             continue
-        powers, merits, t5 = [], 0, 0
+        powers, merits = [], 0
         for p in players:
             if not isinstance(p, dict):
                 continue
@@ -127,19 +127,17 @@ def write_outputs(snapshot: dict) -> int:
             powers.append(pw)
             if isinstance(p.get("merit"), (int, float)):
                 merits += int(p["merit"])
-            if isinstance(p.get("grade"), (int, float)) and p["grade"] >= 5:
-                t5 += 1
             player_rows.append([kid, p.get("name", ""), p.get("alliance", ""), pw])
         if not powers:
             continue
         powers.sort(reverse=True)
         kingdom_rows.append([kid, sum(powers), len(powers), powers[0],
-                             powers[9] if len(powers) >= 10 else "", t5, merits])
+                             powers[9] if len(powers) >= 10 else "", merits])
         with_data += 1
 
     with (STATS / "kingdoms_codtracker.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
-        w.writerow(["kingdom", "total_power", "lords", "top1_power", "p10_power", "t5_lords", "merits"])
+        w.writerow(["kingdom", "total_power", "lords", "top1_power", "p10_power", "merits"])
         w.writerows(sorted(kingdom_rows))
     with (STATS / "top_players_codtracker.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")

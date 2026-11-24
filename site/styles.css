@@ -57,7 +57,7 @@ button, .file { font: inherit; font-size: .85rem; border: 1px solid var(--line);
 table { border-collapse: collapse; width: 100%; min-inline-size: 980px; font-variant-numeric: tabular-nums; }
 caption { text-align: start; padding: 10px 12px; color: var(--muted); font-size: .85rem; }
 th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
-th:nth-child(2), td:nth-child(2), th:nth-child(3), td:nth-child(3) { text-align: left; }
+#t-groups th:nth-child(2), #t-groups td:nth-child(2), #t-kingdoms th:nth-child(3), #t-kingdoms td:nth-child(3), .mini th, .mini td { text-align: left; }
 thead th { position: sticky; top: 0; background: var(--panel); z-index: 1; }
 th button { all: unset; cursor: pointer; font-weight: 600; font-size: .82rem; }
 th button:focus-visible { outline: 2px solid var(--accent); }

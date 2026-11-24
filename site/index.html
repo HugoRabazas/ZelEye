@@ -20,12 +20,6 @@
   <div class="banner" id="banner" hidden></div>
 
   <section class="controls" aria-label="Filtros">
-    <label>Región
-      <select id="f-zone"><option value="">Todas</option></select>
-    </label>
-    <label>Config
-      <select id="f-config"><option value="">Todas</option></select>
-    </label>
     <label>Buscar reino
       <input id="f-kingdom" type="search" inputmode="numeric" placeholder="ej. 338">
     </label>
@@ -38,12 +32,7 @@
     <label>Poder medio reino máx.
       <input id="f-maxavg" type="text" placeholder="ej. 2b">
     </label>
-    <label>Reinos en la zona
-      <select id="f-size"><option value="">Cualquiera</option><option value="7">7</option><option value="8">8</option></select>
-    </label>
     <fieldset class="checks">
-      <label><input type="checkbox" id="f-nomerged"> Zonas sin reinos fusionados</label>
-      <label><input type="checkbox" id="f-onlymerged"> Solo con fusionados</label>
       <label><input type="checkbox" id="f-withstats"> Solo con stats</label>
     </fieldset>
     <div class="actions">
@@ -69,10 +58,7 @@
         <caption id="cap-groups">Zonas de Great Heights ordenadas de menos a más competencia (pulsa una fila para ver sus reinos)</caption>
         <thead><tr>
           <th scope="col" data-key="ease" data-type="number" aria-sort="descending"><button type="button">Facilidad</button></th>
-          <th scope="col" data-key="label" data-type="text"><button type="button">Zona</button></th>
-          <th scope="col" data-key="first" data-type="number"><button type="button">Reinos</button></th>
-          <th scope="col" data-key="size" data-type="number"><button type="button">Nº</button></th>
-          <th scope="col" data-key="mergedCount" data-type="number"><button type="button">Fusionados</button></th>
+          <th scope="col" data-key="first" data-type="number"><button type="button">Zona (reinos)</button></th>
           <th scope="col" data-key="thr" data-type="number"><button type="button">Poder del 10º</button></th>
           <th scope="col" data-key="top1" data-type="number"><button type="button">Top 1</button></th>
           <th scope="col" data-key="total" data-type="number"><button type="button">Poder total</button></th>
@@ -93,8 +79,7 @@
         <thead><tr>
           <th scope="col" data-key="ease" data-type="number" aria-sort="descending"><button type="button">Facilidad zona</button></th>
           <th scope="col" data-key="kingdom" data-type="number"><button type="button">Reino</button></th>
-          <th scope="col" data-key="label" data-type="text"><button type="button">Zona</button></th>
-          <th scope="col" data-key="merged" data-type="text"><button type="button">Fusión</button></th>
+          <th scope="col" data-key="first" data-type="number"><button type="button">Zona (reinos)</button></th>
           <th scope="col" data-key="total" data-type="number"><button type="button">Poder total</button></th>
           <th scope="col" data-key="lords" data-type="number"><button type="button">Lords</button></th>
           <th scope="col" data-key="top1" data-type="number"><button type="button">Top 1</button></th>
@@ -112,7 +97,7 @@
 
     <article id="view-help" class="help" hidden>
       <h2>Cómo funciona</h2>
-      <p>En Great Heights compites contra los lords de <strong>todos los reinos de tu zona</strong> (cada fila de la tabla de grupos: normalmente 8 reinos). Por eso lo que buscamos es la <strong>zona con menos competencia</strong>: la que tiene el <strong>10º lord más débil</strong>. Si superas a ese 10º, estás en el top 10. La pestaña de reinos solo sirve para ver a qué reino de esa zona migrar.</p>
+      <p>En Great Heights compites contra los lords de <strong>todos los reinos de tu zona</strong> (cada fila de la tabla: 8 reinos). Por eso lo que buscamos es la <strong>zona con menos competencia</strong>: la que tiene el <strong>10º lord más débil</strong>. Si superas a ese 10º, estás en el top 10. La pestaña de reinos solo sirve para ver a qué reino de esa zona migrar.</p>
       <h3>Métricas</h3>
       <dl>
         <dt>Poder del 10º</dt>
@@ -120,13 +105,11 @@
         <dt>Rivales por encima</dt>
         <dd>Cuántos lords conocidos de la zona tienen más poder que tú (necesita tu poder y lista de jugadores).</dd>
         <dt>Facilidad (0–100)</dt>
-        <dd>Percentil entre las zonas de la región/config elegida: 100 = la zona con menos competencia (umbral de top 10 más bajo). Si no hay umbral, se usa el poder medio por reino.</dd>
+        <dd>Percentil entre todas las zonas: 100 = la zona con menos competencia (umbral de top 10 más bajo). Si no hay umbral, se usa el poder medio por reino.</dd>
         <dt>Tu puesto</dt>
         <dd>Escribe tu poder arriba y se calcula en qué posición quedarías en cada zona con los lords conocidos.</dd>
         <dt>Crec. 7d</dt>
         <dd>Crecimiento del poder total en los últimos 7 días, usando el histórico diario.</dd>
-        <dt>Fusionados</dt>
-        <dd>Reinos marcados como fusionados (MS-00X) en la tabla de zonas.</dd>
       </dl>
       <h3>De dónde salen los datos</h3>
       <p>Un proceso automático (GitHub Actions) se ejecuta <strong>una vez al día</strong>, junta las stats disponibles y regenera la web. Las webs de stats públicas (callofstats.com, dragonstats.com, cod-tracker.com) bloquean el acceso automatizado o lo prohíben en sus términos, así que las fuentes admitidas son:</p>

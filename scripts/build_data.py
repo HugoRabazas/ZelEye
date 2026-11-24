@@ -39,6 +39,7 @@ KINGDOM_ALIASES = {
     "top100_power": ["top100power", "top100sum", "top100"],
     "t5_lords": ["t5lords", "t5players", "t5", "t5count"],
     "merits": ["merits", "totalmerits", "meritos"],
+    "merits_prev": ["meritsprev", "meritosanterior", "meritostemporadapasada", "meritoslasttemp", "lastseasonmerit", "meritprev"],
     "kills": ["kills", "totalkills", "unitskilled"],
     "open_date": ["opendate", "opened", "startdate", "fechaapertura"],
     "source": ["source", "fuente"],

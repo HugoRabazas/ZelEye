@@ -28,15 +28,16 @@ Después se actualiza sola **cada día a las 05:17 UTC**, y también cada vez qu
 
 ## Fuentes de stats
 
-Las webs de stats de Call of Dragons no permiten la descarga automática:
+La fuente principal es **cod-tracker.com**, con permiso de su responsable. El proceso diario
+(`scripts/fetch_cod_tracker.py`) hace **una sola petición** a `/api/snapshot/latest`, que devuelve
+todos los reinos, y calcula las stats por reino. Usa `curl_cffi` para imitar un navegador real
+(como el repo Discord-Rankings); no resuelve captchas: si cod-tracker activa Turnstile, el script
+termina sin datos y la web se genera con lo que haya. Se puede desactivar con la variable de
+repositorio `COD_TRACKER_ENABLED=false`.
 
-| Web | Situación |
-|---|---|
-| callofstats.com | Los datos de servidores exigen login; sus términos prohíben el scraping |
-| dragonstats.com | Bloquea los navegadores automatizados; sus términos prohíben saltarse los límites técnicos |
-| cod-tracker.com | API protegida con token + Cloudflare Turnstile; `robots.txt` prohíbe `/api/snapshot` y `/api/greatheight` |
+Además puedes añadir o completar datos por tu cuenta:
 
-Por eso el proceso diario usa fuentes legítimas:
+
 
 1. **CSV en el repo**: rellena `data/stats/kingdoms.csv` y/o `data/stats/top_players.csv` (por ejemplo, con lo que exportes desde tu cuenta en esas webs o con datos de tu alianza). Puedes tener varios ficheros (`kingdoms_*.csv`, `top_players_*.csv`). Se aceptan separador `;` o `,`, sufijos `k/m/b` y alias de columnas (`server`, `power`, `reino`, `poder`…). Solo se usan los reinos globales; los chinos (id negativo en callofstats) se ignoran.
 2. **API autorizada**: si el dueño de una web de stats te da acceso, guarda `STATS_API_URL` (y `STATS_API_TOKEN`) en *Settings → Secrets → Actions*. Formato JSON esperado:

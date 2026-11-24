@@ -130,18 +130,19 @@
         <dd>Crecimiento del poder total en los últimos 7 días, usando el histórico diario.</dd>
       </dl>
       <h3>De dónde salen los datos</h3>
-      <p>Un proceso automático (GitHub Actions) se ejecuta <strong>una vez al día</strong>, junta las stats disponibles y regenera la web. Las webs de stats públicas (callofstats.com, dragonstats.com, cod-tracker.com) bloquean el acceso automatizado o lo prohíben en sus términos, así que las fuentes admitidas son:</p>
+      <p>Un proceso automático (GitHub Actions) se ejecuta <strong>una vez al día</strong>, junta las stats disponibles y regenera la web. Los datos salen de <strong>cod-tracker.com</strong> (con permiso de su responsable). También puedes añadir o completar datos por tu cuenta:</p>
       <ol>
         <li>CSV en el repositorio: <code>data/stats/kingdoms.csv</code> y <code>data/stats/top_players.csv</code>.</li>
         <li>Una API autorizada por el dueño de una web de stats (<code>STATS_API_URL</code>).</li>
         <li>Botón <em>Importar CSV local</em>: carga un CSV solo en tu navegador, sin subir nada.</li>
         <li>Una Google Sheet publicada como CSV (<code>STATS_CSV_URLS</code>): se descarga sola cada día, así la alianza puede ir rellenándola.</li>
+        <li><strong>cod-tracker.com</strong>: el proceso diario descarga sus stats de todos los reinos (con permiso del responsable, una petición al día).</li>
       </ol>
     </article>
   </main>
 
   <footer>
-    <p>Proyecto de fans · sin relación con Farlight Games.</p>
+    <p>Datos de reinos: <a href="https://cod-tracker.com" target="_blank" rel="noopener">cod-tracker.com</a> · Proyecto de fans, sin relación con Farlight Games.</p>
   </footer>
 
   <script src="app.js?v=dev" defer></script>

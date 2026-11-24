@@ -2,3 +2,5 @@ site/data.json
 site/history.json
 __pycache__/
 data/stats/*_remote_*.csv
+data/stats/kingdoms_codtracker.csv
+data/stats/top_players_codtracker.csv

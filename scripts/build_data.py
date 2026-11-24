@@ -5,6 +5,7 @@ Fuentes (todas opcionales salvo groups.csv):
   data/groups.csv                 Grupos de Great Heights (zona, config, grupo, reinos, fusiones).
   data/stats/kingdoms.csv         Una fila por reino con sus stats agregadas.
   data/stats/top_players.csv      Una fila por lord (reino, poder) -> permite calcular el umbral exacto de top 10.
+  STATS_CSV_URLS                  URLs de CSV (p. ej. Google Sheets publicada como CSV), separadas por espacios o saltos de línea.
   STATS_API_URL (+ STATS_API_TOKEN) Endpoint JSON autorizado por el dueño de una web de stats (ver README).
 
 Solo usa la librería estándar de Python.
@@ -30,10 +31,10 @@ KINGDOM_ALIASES = {
     "kingdom": ["kingdom", "server", "serverid", "kd", "reino", "id"],
     "zone": ["zone", "zona", "region"],
     "total_power": ["totalpower", "power", "kingdompower", "poder", "podertotal"],
-    "lords": ["lords", "players", "lordcount", "playercount", "jugadores"],
+    "lords": ["lords", "players", "lordcount", "playercount", "jugadores", "numlords", "numjugadores"],
     "active_lords": ["activelords", "activeplayers", "activos"],
-    "top1_power": ["top1power", "top1", "maxpower", "highestpower"],
-    "p10_power": ["p10power", "top10thpower", "rank10power", "power10", "decimo"],
+    "top1_power": ["top1power", "top1", "maxpower", "highestpower", "top1poder", "podertop1", "podermaximo"],
+    "p10_power": ["p10power", "top10thpower", "rank10power", "power10", "decimo", "10poder", "poder10", "poderdel10", "poderdecimo", "decimopoder", "10power"],
     "top10_power": ["top10power", "top10sum", "top10"],
     "top100_power": ["top100power", "top100sum", "top100"],
     "t5_lords": ["t5lords", "t5players", "t5", "t5count"],
@@ -134,6 +135,9 @@ def load_kingdom_stats() -> dict:
             zone, kid = zone_and_id(m.get("kingdom"), m.get("zone"))
             if kid is None:
                 continue
+            # Filas vacías (p. ej. la plantilla sin rellenar) no cuentan como datos.
+            if not any(to_num(m[f]) is not None for f in m if f not in ("kingdom", "zone", "open_date", "source")):
+                continue
             rec = stats.setdefault((zone, kid), {})
             for f in KINGDOM_ALIASES:
                 if f in ("kingdom", "zone") or f not in m:
@@ -191,6 +195,32 @@ def load_api() -> tuple[dict, dict]:
 
 
 # ---------------------------------------------------------------- cálculo
+def fetch_remote_csvs() -> None:
+    """Descarga cada URL de STATS_CSV_URLS a data/stats/ (ignorado por git) antes de leer los CSV.
+
+    El tipo se deduce de la cabecera: si tiene columna de nombre de lord y de poder es una lista
+    de jugadores (top_players_remote_N.csv); si no, stats por reino (kingdoms_remote_N.csv).
+    """
+    urls = (os.environ.get("STATS_CSV_URLS") or "").split()
+    stats_dir = DATA / "stats"
+    for old in stats_dir.glob("*_remote_*.csv"):
+        old.unlink()
+    for i, url in enumerate(urls, 1):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "great-heights-finder/1.0"})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                text = r.read().decode("utf-8-sig", errors="replace")
+        except Exception as e:  # una URL caída no debe tumbar la web
+            print(f"[aviso] No se pudo descargar la URL de CSV nº {i}: {e}", file=sys.stderr)
+            continue
+        first = next((l for l in text.splitlines() if l.strip() and not l.lstrip().startswith("#")), "")
+        cols = {norm(c) for c in re.split(r"[;,]", first)}
+        is_players = bool(cols & {"name", "lord", "lordname", "nombre"}) and bool(cols & {"power", "poder", "highestpower", "currentpower"})
+        name = f"{'top_players' if is_players else 'kingdoms'}_remote_{i}.csv"
+        (stats_dir / name).write_text(text, encoding="utf-8")
+        print(f"URL de CSV nº {i}: {len(text.splitlines())} líneas -> {name}")
+
+
 def kth(values, k):
     v = sorted((x for x in values if x is not None), reverse=True)
     return v[k - 1] if len(v) >= k else None
@@ -198,6 +228,7 @@ def kth(values, k):
 
 def build():
     groups = load_groups()
+    fetch_remote_csvs()
     kstats = load_kingdom_stats()
     players = load_players()
     try:

@@ -284,7 +284,9 @@ function syncSortHeaders(sel, [key, dir]) {
 function renderMeta() {
   const d = state.data;
   const when = new Date(d.generated_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
-  $('#meta').textContent = `Actualizado: ${when} · Fuentes: ${d.sources.length ? d.sources.join(', ') : 'ninguna'}${state.localImport ? ' + CSV local' : ''}`;
+  const nice = { 'kingdoms_codtracker.csv': 'cod-tracker.com', 'top_players.csv': 'lords CSV', 'kingdoms.csv': 'CSV', 'api': 'API' };
+  const srcs = [...new Set(d.sources.map((x) => nice[x] || x))];
+  $('#meta').textContent = `Actualizado: ${when} · Datos: ${srcs.length ? srcs.join(', ') : 'ninguno todavía'}${state.localImport ? ' + CSV local' : ''}`;
   const b = $('#banner');
   const any = hasStats();
   document.body.classList.toggle('nostats', !any);

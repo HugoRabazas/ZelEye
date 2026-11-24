@@ -13,7 +13,7 @@ Turnstile, el token llega con 403 y el script termina sin datos en vez de intent
 Uso autorizado por el responsable de cod-tracker. Créditos a cod-tracker.com en la web.
 
 Salida (ignorada por git, la regenera el workflow):
-  data/stats/kingdoms_codtracker.csv      total_power, lords, top1_power, p10_power, merits por reino
+  data/stats/kingdoms_codtracker.csv      total_power, lords, top1_power, p10_power, merits, merits_prev por reino
   data/stats/top_players_codtracker.csv   kingdom, name, alliance, power (para el 10º exacto de la zona)
 
 Variables de entorno (todas opcionales):
@@ -85,7 +85,7 @@ def make_session():
 
 
 def fetch_realm(session, realm: int):
-    """Devuelve la lista de jugadores del día más reciente de un reino, o None si no hay datos."""
+    """Devuelve el historial completo de un reino {fecha: [jugadores]}, o None si no hay datos."""
     headers = {"Accept": "application/json, text/plain, */*", "Referer": f"{BASE}/view",
                "Sec-Fetch-Dest": "empty", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Site": "same-origin"}
     r = session.get(f"{BASE}/api/snapshot/server/{realm}?sv=v2", headers=headers, timeout=20)
@@ -96,10 +96,36 @@ def fetch_realm(session, realm: int):
     if r.status_code != 200:
         raise RuntimeError(f"HTTP {r.status_code}: {r.text[:100]}")
     data = (r.json() or {}).get("data", {})
-    if not data:
-        return None
-    latest = sorted(data.keys(), reverse=True)[0]
-    return data[latest]
+    return data or None
+
+
+def season_of(players: list):
+    """Temporada dominante de una foto (campo _typeSeason), o None."""
+    import collections
+    c = collections.Counter(p.get("_typeSeason") for p in players if isinstance(p, dict) and p.get("_typeSeason"))
+    return c.most_common(1)[0][0] if c else None
+
+
+def split_current_and_prev(history: dict):
+    """De {fecha: [jugadores]} saca (jugadores_actuales, méritos_temporada_pasada).
+
+    Méritos temp. pasada = suma del 'merit' en la ÚLTIMA foto de la temporada anterior a la actual
+    (en esa foto el merit de cada lord ya es su total final de esa temporada). None si el historial
+    no llega a la temporada anterior.
+    """
+    dates = sorted(history.keys(), reverse=True)
+    current = history[dates[0]]
+    cur_season = season_of(current)
+    prev_merit = None
+    if cur_season:
+        for d in dates:
+            snap = history[d]
+            s = season_of(snap)
+            if s and s != cur_season:  # primera foto (la más reciente) de otra temporada
+                prev_merit = sum(int(p["merit"]) for p in snap
+                                 if isinstance(p, dict) and isinstance(p.get("merit"), (int, float)))
+                break
+    return current, prev_merit
 
 
 def player_power(p: dict):
@@ -110,11 +136,14 @@ def player_power(p: dict):
     return None
 
 
-def write_outputs(snapshot: dict) -> int:
-    """Escribe los dos CSV a partir de {realm(int): [jugadores]}. Devuelve nº de reinos con datos."""
+def write_outputs(histories: dict) -> int:
+    """Escribe los dos CSV a partir de {realm(int): {fecha: [jugadores]}}. Devuelve nº de reinos con datos."""
     STATS.mkdir(parents=True, exist_ok=True)
     kingdom_rows, player_rows, with_data = [], [], 0
-    for kid, players in snapshot.items():
+    for kid, history in histories.items():
+        if not isinstance(history, dict) or not history:
+            continue
+        players, merits_prev = split_current_and_prev(history)
         if not isinstance(players, list) or not players:
             continue
         powers, merits = [], 0
@@ -132,12 +161,13 @@ def write_outputs(snapshot: dict) -> int:
             continue
         powers.sort(reverse=True)
         kingdom_rows.append([kid, sum(powers), len(powers), powers[0],
-                             powers[9] if len(powers) >= 10 else "", merits])
+                             powers[9] if len(powers) >= 10 else "", merits,
+                             merits_prev if merits_prev is not None else ""])
         with_data += 1
 
     with (STATS / "kingdoms_codtracker.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
-        w.writerow(["kingdom", "total_power", "lords", "top1_power", "p10_power", "merits"])
+        w.writerow(["kingdom", "total_power", "lords", "top1_power", "p10_power", "merits", "merits_prev"])
         w.writerows(sorted(kingdom_rows))
     with (STATS / "top_players_codtracker.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
@@ -159,10 +189,10 @@ def main() -> int:
     snapshot, consec_fails, retried = {}, 0, False
     for i, realm in enumerate(realms, 1):
         try:
-            players = fetch_realm(session, realm)
+            history = fetch_realm(session, realm)
             consec_fails = 0
-            if players:
-                snapshot[realm] = players
+            if history:
+                snapshot[realm] = history
         except PermissionError as e:
             # token caducado o bloqueo temporal: renovar sesión UNA vez y reintentar el reino
             if not retried:

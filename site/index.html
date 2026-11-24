@@ -82,6 +82,7 @@
           <th scope="col" data-key="total" data-type="number"><button type="button">Poder total</button></th>
           <th scope="col" data-key="avg" data-type="number"><button type="button">Media reino</button></th>
           <th scope="col" data-key="maxk" data-type="number"><button type="button">Reino más fuerte</button></th>
+          <th scope="col" data-key="meritsPrev" data-type="number"><button type="button">Mérito temp. ant.</button></th>
           <th scope="col" data-key="growth" data-type="number"><button type="button">Crec. 7d</button></th>
           <th scope="col" data-key="myRank" data-type="number"><button type="button">Tu puesto</button></th>
           <th scope="col" data-key="rivals" data-type="number"><button type="button">Rivales por encima</button></th>
@@ -103,6 +104,7 @@
           <th scope="col" data-key="top1" data-type="number"><button type="button">Top 1</button></th>
           <th scope="col" data-key="p10" data-type="number"><button type="button">10º del reino</button></th>
           <th scope="col" data-key="merits" data-type="number"><button type="button">Méritos</button></th>
+          <th scope="col" data-key="meritsPrev" data-type="number"><button type="button">Mérito temp. ant.</button></th>
           <th scope="col" data-key="growth" data-type="number"><button type="button">Crec. 7d</button></th>
           <th scope="col" data-key="thr" data-type="number"><button type="button">10º de la zona</button></th>
           <th scope="col" data-key="myRankK" data-type="number"><button type="button">Tu puesto reino</button></th>
@@ -119,6 +121,8 @@
       <dl>
         <dt>Poder del 10º</dt>
         <dd>Poder del 10º lord más fuerte de la zona. Si hay lista de jugadores (<code>top_players.csv</code>) es <strong>exacto</strong>. Si solo hay el “10º de cada reino” se muestra como <strong>≥ X</strong>: es un mínimo garantizado (un reino con 10 lords por encima de X ya obliga a que el 10º del grupo tenga al menos X).</dd>
+        <dt>Mérito temp. ant.</dt>
+        <dd>Méritos que el reino/zona acumuló en la <strong>temporada anterior</strong>. Sale del historial de cod-tracker: la última foto de la temporada pasada, donde el mérito de cada lord ya es su total final.</dd>
         <dt>Rivales por encima</dt>
         <dd>Cuántos lords conocidos de la zona tienen más poder que tú (necesita tu poder y lista de jugadores).</dd>
         <dt>Facilidad (0–100)</dt>

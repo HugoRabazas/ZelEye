@@ -1,10 +1,14 @@
 name: Actualizar stats y publicar web
 
 on:
-  schedule:
-    - cron: "17 5 * * *"   # una vez al día (05:17 UTC)
-  workflow_dispatch:        # botón "Run workflow" para lanzarlo a mano
-  push:
+  # Sin escaneo automático: se lanza a mano cuando quieras datos frescos.
+  workflow_dispatch:        # botón "Run workflow" (Actions) para escanear cod-tracker
+    inputs:
+      realms:
+        description: "Reinos a pedir a cod-tracker (p. ej. 729-736). Vacío = todos."
+        required: false
+        default: ""
+  push:                     # al cambiar el código se republica usando el ÚLTIMO escaneo guardado
     branches: [main]
     paths: ["data/**", "site/**", "scripts/**", ".github/workflows/**"]
 
@@ -31,7 +35,9 @@ jobs:
         # Uso autorizado por el responsable de cod-tracker. 1 petición al día.
         # Si falla (web caída o Turnstile activo), la web se genera igual con lo que haya.
         continue-on-error: true
-        if: ${{ vars.COD_TRACKER_ENABLED != 'false' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && vars.COD_TRACKER_ENABLED != 'false' }}
+        env:
+          COD_TRACKER_REALMS: ${{ github.event.inputs.realms || vars.COD_TRACKER_REALMS }}
         run: python scripts/fetch_cod_tracker.py
       - name: Recoger stats y generar data.json
         env:
@@ -40,13 +46,13 @@ jobs:
           STATS_API_URL: ${{ secrets.STATS_API_URL }}
           STATS_API_TOKEN: ${{ secrets.STATS_API_TOKEN }}
         run: python scripts/build_data.py
-      - name: Guardar histórico diario
+      - name: Guardar datos del escaneo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/history
+          git add data/history data/stats/kingdoms_codtracker.csv data/stats/top_players_codtracker.csv
           if ! git diff --cached --quiet; then
-            git commit -m "Histórico de stats $(date -u +%F)"
+            git commit -m "Escaneo de cod-tracker $(date -u +%F)"
             git push
           fi
       - uses: actions/configure-pages@v5

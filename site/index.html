@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Great Heights Finder</title>
+  <meta name="description" content="Encuentra el reino y grupo de Great Heights (Call of Dragons) más fácil para entrar en el top 10.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Great Heights Finder</h1>
+      <p class="sub">Call of Dragons · ¿En qué grupo es más fácil entrar en el <strong>top 10</strong>?</p>
+    </div>
+    <p class="meta" id="meta">Cargando datos…</p>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="controls" aria-label="Filtros">
+    <label>Zona
+      <select id="f-zone"><option value="">Todas</option></select>
+    </label>
+    <label>Config
+      <select id="f-config"><option value="">Todas</option></select>
+    </label>
+    <label>Buscar reino
+      <input id="f-kingdom" type="search" inputmode="numeric" placeholder="ej. 338">
+    </label>
+    <label>Tu poder
+      <input id="f-power" type="text" placeholder="ej. 85m o 1.2b">
+    </label>
+    <label>Umbral top 10 máx.
+      <input id="f-maxthr" type="text" placeholder="ej. 150m">
+    </label>
+    <label>Poder medio reino máx.
+      <input id="f-maxavg" type="text" placeholder="ej. 2b">
+    </label>
+    <label>Reinos en el grupo
+      <select id="f-size"><option value="">Cualquiera</option><option value="7">7</option><option value="8">8</option></select>
+    </label>
+    <fieldset class="checks">
+      <label><input type="checkbox" id="f-nomerged"> Sin reinos fusionados</label>
+      <label><input type="checkbox" id="f-onlymerged"> Solo con fusionados</label>
+      <label><input type="checkbox" id="f-withstats"> Solo con stats</label>
+    </fieldset>
+    <div class="actions">
+      <button type="button" id="btn-reset">Limpiar filtros</button>
+      <button type="button" id="btn-export">Exportar CSV</button>
+      <label class="file">Importar CSV local
+        <input type="file" id="f-import" accept=".csv,text/csv" multiple>
+      </label>
+    </div>
+  </section>
+
+  <nav class="tabs" aria-label="Vista">
+    <button type="button" data-view="groups" aria-pressed="true">Grupos</button>
+    <button type="button" data-view="kingdoms" aria-pressed="false">Reinos</button>
+    <button type="button" data-view="help" aria-pressed="false">Cómo funciona</button>
+  </nav>
+
+  <section class="summary" id="summary" aria-live="polite"></section>
+
+  <main>
+    <div id="view-groups" class="table-wrap" role="region" aria-labelledby="cap-groups" tabindex="0">
+      <table id="t-groups">
+        <caption id="cap-groups">Grupos de Great Heights (pulsa una fila para ver sus reinos)</caption>
+        <thead><tr>
+          <th scope="col" data-key="ease" data-type="number" aria-sort="descending"><button type="button">Facilidad</button></th>
+          <th scope="col" data-key="label" data-type="text"><button type="button">Grupo</button></th>
+          <th scope="col" data-key="first" data-type="number"><button type="button">Reinos</button></th>
+          <th scope="col" data-key="size" data-type="number"><button type="button">Nº</button></th>
+          <th scope="col" data-key="mergedCount" data-type="number"><button type="button">Fusionados</button></th>
+          <th scope="col" data-key="thr" data-type="number"><button type="button">Poder del 10º</button></th>
+          <th scope="col" data-key="top1" data-type="number"><button type="button">Top 1</button></th>
+          <th scope="col" data-key="total" data-type="number"><button type="button">Poder total</button></th>
+          <th scope="col" data-key="avg" data-type="number"><button type="button">Media reino</button></th>
+          <th scope="col" data-key="maxk" data-type="number"><button type="button">Reino más fuerte</button></th>
+          <th scope="col" data-key="growth" data-type="number"><button type="button">Crec. 7d</button></th>
+          <th scope="col" data-key="myRank" data-type="number"><button type="button">Tu puesto</button></th>
+          <th scope="col" data-key="coverage" data-type="number"><button type="button">Datos</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="view-kingdoms" class="table-wrap" role="region" aria-labelledby="cap-kingdoms" tabindex="0" hidden>
+      <table id="t-kingdoms">
+        <caption id="cap-kingdoms">Reinos</caption>
+        <thead><tr>
+          <th scope="col" data-key="ease" data-type="number" aria-sort="descending"><button type="button">Facilidad grupo</button></th>
+          <th scope="col" data-key="kingdom" data-type="number"><button type="button">Reino</button></th>
+          <th scope="col" data-key="label" data-type="text"><button type="button">Grupo</button></th>
+          <th scope="col" data-key="merged" data-type="text"><button type="button">Fusión</button></th>
+          <th scope="col" data-key="total" data-type="number"><button type="button">Poder total</button></th>
+          <th scope="col" data-key="lords" data-type="number"><button type="button">Lords</button></th>
+          <th scope="col" data-key="top1" data-type="number"><button type="button">Top 1</button></th>
+          <th scope="col" data-key="p10" data-type="number"><button type="button">10º del reino</button></th>
+          <th scope="col" data-key="t5" data-type="number"><button type="button">T5</button></th>
+          <th scope="col" data-key="merits" data-type="number"><button type="button">Méritos</button></th>
+          <th scope="col" data-key="growth" data-type="number"><button type="button">Crec. 7d</button></th>
+          <th scope="col" data-key="thr" data-type="number"><button type="button">10º del grupo</button></th>
+          <th scope="col" data-key="myRankK" data-type="number"><button type="button">Tu puesto reino</button></th>
+          <th scope="col" data-key="myRank" data-type="number"><button type="button">Tu puesto grupo</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <article id="view-help" class="help" hidden>
+      <h2>Cómo funciona</h2>
+      <p>En Great Heights compites contra los lords de <strong>todos los reinos de tu grupo</strong>. Por eso lo que importa no es solo lo fuerte que sea tu reino, sino <strong>cuánto poder tiene el 10º lord más fuerte del grupo</strong>: si tú le superas, estás en el top 10.</p>
+      <h3>Métricas</h3>
+      <dl>
+        <dt>Poder del 10º</dt>
+        <dd>Poder del 10º lord más fuerte del grupo. Si hay lista de jugadores (<code>top_players.csv</code>) es <strong>exacto</strong>. Si solo hay el “10º de cada reino” se muestra como <strong>≥ X</strong>: es un mínimo garantizado (un reino con 10 lords por encima de X ya obliga a que el 10º del grupo tenga al menos X).</dd>
+        <dt>Facilidad (0–100)</dt>
+        <dd>Percentil entre los grupos visibles: 100 = el grupo con el umbral de top 10 más bajo. Si no hay umbral, se usa el poder medio por reino.</dd>
+        <dt>Tu puesto</dt>
+        <dd>Escribe tu poder arriba y se calcula en qué posición quedarías en cada grupo y reino con los lords conocidos.</dd>
+        <dt>Crec. 7d</dt>
+        <dd>Crecimiento del poder total en los últimos 7 días, usando el histórico diario.</dd>
+        <dt>Fusionados</dt>
+        <dd>Reinos marcados como fusionados (MS-00X) en la tabla de grupos.</dd>
+      </dl>
+      <h3>De dónde salen los datos</h3>
+      <p>Un proceso automático (GitHub Actions) se ejecuta <strong>una vez al día</strong>, junta las stats disponibles y regenera la web. Las webs de stats públicas (callofstats.com, dragonstats.com, cod-tracker.com) bloquean el acceso automatizado o lo prohíben en sus términos, así que las fuentes admitidas son:</p>
+      <ol>
+        <li>CSV en el repositorio: <code>data/stats/kingdoms.csv</code> y <code>data/stats/top_players.csv</code>.</li>
+        <li>Una API autorizada por el dueño de una web de stats (<code>STATS_API_URL</code>).</li>
+        <li>Botón <em>Importar CSV local</em>: carga un CSV solo en tu navegador, sin subir nada.</li>
+      </ol>
+    </article>
+  </main>
+
+  <footer>
+    <p>Proyecto de fans, sin relación con Farlight. Datos de reinos según las fuentes indicadas.</p>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

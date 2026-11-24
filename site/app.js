@@ -20,7 +20,7 @@ function fmt(n) {
   if (a >= 1e3) return (n / 1e3).toFixed(1) + 'K';
   return String(Math.round(n));
 }
-const pct = (n) => (n == null ? '<span class="muted">—</span>' : (n >= 0 ? '+' : '') + (n * 100).toFixed(1) + '%');
+const pct = (n) => (n == null ? '<span class="muted">—</span>' : `<span class="${n >= 0 ? 'pct-up' : 'pct-down'}">${n >= 0 ? '+' : ''}${(n * 100).toFixed(1)}%</span>`);
 const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 
 // Mismos alias que scripts/build_data.py
@@ -170,8 +170,8 @@ function assignEase(rows) {
 // ---------------------------------------------------------------- render
 function easeBadge(e) {
   if (e == null) return '<span class="muted">—</span>';
-  const hue = Math.round((e / 100) * 120); // 0 rojo -> 120 verde
-  return `<span class="ease" style="background:hsl(${hue} 60% 38%)">${e}</span>`;
+  const hue = Math.round((e / 100) * 130); // 0 rojo -> 130 verde
+  return `<span class="easebar" title="Facilidad ${e}/100"><span class="track"><span class="fill" style="width:${Math.max(e, 4)}%;background:hsl(${hue} 70% 52%)"></span></span><b>${e}</b></span>`;
 }
 function thrCell(r) {
   if (r.thr == null) return fmt(null);
@@ -201,6 +201,7 @@ function render() {
   const rows = filterGroups(all);
   saveFilters();
   renderSummary(rows, basis);
+  renderPodium(all);
   if (state.view === 'groups') renderGroups(rows);
   if (state.view === 'kingdoms') renderKingdoms(rows);
 }
@@ -212,7 +213,7 @@ function renderSummary(rows, basis) {
   if (withThr.length || rows.some((r) => r.avg != null)) {
     s += ` Competencia medida por el <strong>${basis}</strong>.`;
     if (best?.ease != null) s += ` Zona con menos competencia: <strong>reinos ${esc(best.label)}</strong> (10º lord: ${best.thrKind === 'lb' ? '≥ ' : ''}${fmt(best.thr ?? best.avg)}).`;
-  } else s += ' Sin stats todavía: la facilidad aparecerá cuando haya datos (ver “Cómo funciona”).';
+  } else s += ' Pulsa una zona para ver sus reinos.';
   $('#summary').innerHTML = s;
 }
 
@@ -223,7 +224,7 @@ function renderGroups(rows) {
   for (const r of rows) {
     const id = r.g.id, open = state.open.has(id);
     html.push(`<tr class="g" tabindex="0" data-id="${esc(id)}" aria-expanded="${open}">
-      <td>${easeBadge(r.ease)}</td><td>${esc(r.label)}</td><td>${thrCell(r)}</td><td>${fmt(r.top1)}</td>
+      <td>${easeBadge(r.ease)}</td><td class="zone-cell">${esc(r.label)}<small>${r.g.kingdoms.length} reinos</small></td><td>${thrCell(r)}</td><td>${fmt(r.top1)}</td>
       <td>${fmt(r.total)}</td><td>${fmt(r.avg)}</td><td>${fmt(r.maxk)}</td><td>${pct(r.growth)}</td>
       <td>${myCell(r, r.myRankTxt, r.thr, r.thrKind)}</td><td>${r.rivals == null ? fmt(null) : r.rivals}</td><td>${Math.round(r.coverage * 100)}%</td></tr>`);
     if (open) html.push(`<tr class="detail"><td colspan="11">${groupDetail(r)}</td></tr>`);
@@ -233,6 +234,9 @@ function renderGroups(rows) {
 }
 
 function groupDetail(r) {
+  if (!hasStats()) {
+    return `<div class="kchips"><span class="kchips-title">Reinos de la zona ${esc(r.label)}</span>${r.g.kingdoms.map((k) => `<span>${k}</span>`).join('')}</div>`;
+  }
   const kRows = r.ks.map((k) => {
     const s = k.stats, p10 = s.p10_power ?? (k.players.length >= 10 ? k.players[9] : null);
     return `<tr><td>${k.kingdom}</td><td>${fmt(s.total_power)}</td><td>${fmt(s.lords)}</td>
@@ -282,9 +286,38 @@ function renderMeta() {
   const when = new Date(d.generated_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
   $('#meta').textContent = `Actualizado: ${when} · Fuentes: ${d.sources.length ? d.sources.join(', ') : 'ninguna'}${state.localImport ? ' + CSV local' : ''}`;
   const b = $('#banner');
-  const any = state.localImport || d.has_stats;
+  const any = hasStats();
+  document.body.classList.toggle('nostats', !any);
+  $('#cap-groups').textContent = any ? 'Todas las zonas, de menos a más competencia · pulsa una fila para ver sus reinos' : 'Todas las zonas · pulsa una para ver sus reinos';
   b.hidden = any;
-  if (!any) b.innerHTML = '<p><strong>Todavía no hay stats de reinos.</strong> Ya puedes explorar y filtrar los grupos. Para activar la facilidad y el “poder del 10º”, añade datos en <code>data/stats/</code> o usa <em>Importar CSV local</em>. Detalles en “Cómo funciona”.</p>';
+  if (!any) b.innerHTML = `<div class="icon" aria-hidden="true">⛰</div><div>
+    <h2>Aún no hay stats de reinos</h2>
+    <p>Las zonas ya están cargadas: pulsa cualquiera para ver sus 8 reinos. Para saber cuál es la más fácil faltan los datos de poder:</p>
+    <ol>
+      <li>Pulsa <strong>Importar CSV</strong> con el poder de los lords o reinos (solo se carga en tu navegador).</li>
+      <li>O súbelos a <code>data/stats/</code> en GitHub y se publican en la próxima actualización diaria.</li>
+    </ol></div>`;
+  const ks = d.kingdoms;
+  const withData = ks.filter((k) => k.players.length || Object.keys(k.stats).some((f) => f !== 'source')).length;
+  $('#chip-zones').textContent = d.groups.length;
+  $('#chip-kingdoms').textContent = ks.length;
+  $('#chip-coverage').textContent = `${Math.round((withData / ks.length) * 100)}%`;
+}
+function hasStats() { return state.localImport || state.data.has_stats; }
+
+function renderPodium(all) {
+  const box = $('#podium');
+  const top = sortRows(all.filter((r) => r.ease != null), ['ease', 'descending']).slice(0, 3);
+  box.hidden = !hasStats() || !top.length || state.view === 'help';
+  if (box.hidden) return;
+  box.innerHTML = top.map((r, i) => `<button type="button" class="card r${i + 1}" data-id="${esc(r.g.id)}">
+      <div class="rank">${['🥇 La más fácil', '🥈 2ª más fácil', '🥉 3ª más fácil'][i]}</div>
+      <div class="zone">${esc(r.label)}</div>
+      <div class="kv"><span>10º lord</span><b>${r.thrKind === 'lb' ? '≥ ' : ''}${fmt(r.thr)}</b></div>
+      <div class="kv"><span>Top 1</span><b>${fmt(r.top1)}</b></div>
+      <div class="kv"><span>Media por reino</span><b>${fmt(r.avg)}</b></div>
+      ${r.my != null ? `<div class="kv"><span>Tu puesto</span><b class="${r.myRankTxt != null && r.myRankTxt <= 10 ? 'good' : ''}">${r.myRankTxt != null ? '#' + r.myRankTxt : '?'}</b></div>` : ''}
+    </button>`).join('');
 }
 
 // ---------------------------------------------------------------- import / export
@@ -374,4 +407,9 @@ const toggleRow = (tr) => { const id = tr.dataset.id; if (state.open.has(id)) st
 $('#t-groups tbody').addEventListener('click', (e) => { const tr = e.target.closest('tr.g'); if (tr) toggleRow(tr); });
 $('#t-groups tbody').addEventListener('keydown', (e) => { const tr = e.target.closest('tr.g'); if (tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggleRow(tr); } });
 
+$('#podium').addEventListener('click', (e) => {
+  const c = e.target.closest('.card'); if (!c) return;
+  state.open.add(c.dataset.id); setView('groups');
+  requestAnimationFrame(() => document.querySelector(`tr.g[data-id="${CSS.escape(c.dataset.id)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+});
 load().catch((e) => { $('#meta').textContent = 'Error cargando datos: ' + e.message; });

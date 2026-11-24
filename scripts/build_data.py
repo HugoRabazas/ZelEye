@@ -278,6 +278,13 @@ def build():
     (SITE / "history.json").write_text(json.dumps(
         {p.stem: json.loads(p.read_text()) for p in hist}, separators=(",", ":")), encoding="utf-8")
 
+    # Versión en las URLs de CSS/JS para que el navegador no mezcle ficheros viejos y nuevos.
+    # Solo en GitHub Actions, para no ensuciar el index.html del repo al compilar en local.
+    index = SITE / "index.html"
+    stamp = now.strftime("%Y%m%d%H%M%S")
+    if os.environ.get("GITHUB_ACTIONS"):
+        index.write_text(re.sub(r'(styles\.css|app\.js)\?v=[^"]*', rf'\1?v={stamp}', index.read_text(encoding="utf-8")), encoding="utf-8")
+
     print(f"{len(groups)} grupos, {len(kingdoms_out)} reinos, stats para {len(kstats)} reinos, "
           f"{sum(len(v) for v in players.values())} lords.")
 

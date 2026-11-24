@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Descarga las stats de Call of Dragons desde cod-tracker.com y las deja en data/stats/.
 
-Pensado para correr en GitHub Actions (una vez al día). Pide los datos reino por reino
+Pensado para correr en GitHub Actions a demanda (Run workflow). Pide los datos reino por reino
 (`/api/snapshot/server/{realm}?sv=v2`), con una pausa entre peticiones para no saturar
 el servidor. (cod-tracker retiró el endpoint que devolvía todos los reinos de golpe.)
 

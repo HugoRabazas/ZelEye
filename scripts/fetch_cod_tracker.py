@@ -150,7 +150,7 @@ def write_outputs(snapshot: dict) -> int:
 
 
 def main() -> int:
-    realms = parse_realms(os.environ.get("COD_TRACKER_REALMS", "1-1024"))
+    realms = parse_realms((os.environ.get("COD_TRACKER_REALMS") or "1-1024").strip() or "1-1024")
     print(f"[*] cod-tracker: pidiendo {len(realms)} reinos (pausa {DELAY}s)...")
     try:
         session = make_session()

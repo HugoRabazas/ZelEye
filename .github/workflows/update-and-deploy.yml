@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "17 5 * * *"   # una vez al día (05:17 UTC)
   workflow_dispatch:        # botón "Run workflow" para lanzarlo a mano
+    inputs:
+      realms:
+        description: "Reinos a pedir a cod-tracker (p. ej. 729-736). Vacío = todos."
+        required: false
+        default: ""
   push:
     branches: [main]
     paths: ["data/**", "site/**", "scripts/**", ".github/workflows/**"]
@@ -32,6 +37,8 @@ jobs:
         # Si falla (web caída o Turnstile activo), la web se genera igual con lo que haya.
         continue-on-error: true
         if: ${{ vars.COD_TRACKER_ENABLED != 'false' }}
+        env:
+          COD_TRACKER_REALMS: ${{ github.event.inputs.realms || vars.COD_TRACKER_REALMS }}
         run: python scripts/fetch_cod_tracker.py
       - name: Recoger stats y generar data.json
         env:

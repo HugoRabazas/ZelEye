@@ -1,4 +1,4 @@
 # Una fila por reino. Separador ; o ,  -- Las líneas que empiezan por # se ignoran.
-# Números admiten sufijos k/m/b (ej. 1.2b). Reinos de China: zone=china o id negativo (-338).
-# Columnas (todas opcionales salvo kingdom): kingdom;zone;total_power;lords;active_lords;top1_power;p10_power;top10_power;top100_power;t5_lords;merits;kills;open_date;source
-kingdom;zone;total_power;lords;active_lords;top1_power;p10_power;top10_power;top100_power;t5_lords;merits;kills;open_date;source
+# Números admiten sufijos k/m/b (ej. 1.2b). Solo reinos globales.
+# Columnas (todas opcionales salvo kingdom): kingdom;total_power;lords;active_lords;top1_power;p10_power;top10_power;top100_power;t5_lords;merits;kills;open_date;source
+kingdom;total_power;lords;active_lords;top1_power;p10_power;top10_power;top100_power;t5_lords;merits;kills;open_date;source

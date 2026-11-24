@@ -86,13 +86,10 @@ async function load() {
   ]);
   state.data = d; state.history = h;
   for (const k of d.kingdoms) { k.players = k.players || []; kIndex.set(`${k.zone}:${k.kingdom}`, k); }
-  fillSelect('#f-zone', [...new Set(d.groups.map((g) => g.zone))]);
-  fillSelect('#f-config', [...new Set(d.groups.map((g) => g.config))]);
   restoreFilters();
   renderMeta();
   render();
 }
-function fillSelect(sel, values) { const s = $(sel); for (const v of values) s.add(new Option(v, v)); }
 
 // ---------------------------------------------------------------- cálculo
 function growth7d(keys) {
@@ -129,11 +126,10 @@ function computeGroups() {
     let myRank = rankOf(my, players);
     let myRankTxt = myRank;
     if (my != null && thr != null && myRank == null) { myRank = my > thr && thrKind === 'exact' ? 10 : null; }
-    const mergedCount = Object.keys(g.merged).length;
     return {
       g, ks, players, thr, thrKind,
-      label: `Zona ${g.group_no} · ${g.zone} · ${g.config}`,
-      first: g.kingdoms[0], size: g.kingdoms.length, mergedCount,
+      label: `${g.kingdoms[0]}–${g.kingdoms.at(-1)}`,
+      first: g.kingdoms[0],
       top1: top1s.length ? Math.max(...top1s) : null,
       total: totals.length ? totals.reduce((a, b) => a + b, 0) : null,
       avg: totals.length ? totals.reduce((a, b) => a + b, 0) / totals.length : null,
@@ -147,16 +143,14 @@ function computeGroups() {
 }
 
 function filterGroups(rows, baseOnly = false) {
-  const zone = $('#f-zone').value, config = $('#f-config').value, size = $('#f-size').value;
-  if (baseOnly) return rows.filter((r) => (!zone || r.g.zone === zone) && (!config || r.g.config === config));
+  if (baseOnly) return rows;
   const kq = $('#f-kingdom').value.trim();
   const maxThr = parseNum($('#f-maxthr').value), maxAvg = parseNum($('#f-maxavg').value);
-  const noMerged = $('#f-nomerged').checked, onlyMerged = $('#f-onlymerged').checked, withStats = $('#f-withstats').checked;
+  const withStats = $('#f-withstats').checked;
   return rows.filter((r) =>
-    (!zone || r.g.zone === zone) && (!config || r.g.config === config) && (!size || r.size === +size) &&
     (!kq || r.g.kingdoms.some((k) => String(k) === kq)) &&
     (maxThr == null || (r.thr != null && r.thr <= maxThr)) && (maxAvg == null || (r.avg != null && r.avg <= maxAvg)) &&
-    (!noMerged || r.mergedCount === 0) && (!onlyMerged || r.mergedCount > 0) && (!withStats || r.coverage > 0));
+    (!withStats || r.coverage > 0));
 }
 
 // Facilidad: percentil inverso de la métrica de dificultad entre los grupos visibles.
@@ -201,7 +195,7 @@ function sortRows(rows, [key, dir]) {
 function render() {
   if (!state.data) return;
   const all = computeGroups();
-  // La facilidad se calcula sobre la zona/config elegida, no sobre el resultado de los demás filtros,
+  // La facilidad se calcula sobre todas las zonas, no sobre el resultado de los filtros,
   // para que buscar un reino concreto no cambie su nota.
   const basis = assignEase(filterGroups(all, true));
   const rows = filterGroups(all);
@@ -214,10 +208,10 @@ function render() {
 function renderSummary(rows, basis) {
   const withThr = rows.filter((r) => r.thr != null);
   const best = sortRows([...rows], ['ease', 'descending'])[0];
-  let s = `<strong>${rows.length}</strong> zonas · <strong>${rows.reduce((a, r) => a + r.size, 0)}</strong> reinos.`;
+  let s = `<strong>${rows.length}</strong> zonas · <strong>${rows.reduce((a, r) => a + r.g.kingdoms.length, 0)}</strong> reinos.`;
   if (withThr.length || rows.some((r) => r.avg != null)) {
     s += ` Competencia medida por el <strong>${basis}</strong>.`;
-    if (best?.ease != null) s += ` Zona con menos competencia: <strong>${esc(best.label)}</strong> (reinos ${best.g.kingdoms[0]}–${best.g.kingdoms.at(-1)}, 10º lord: ${best.thrKind === 'lb' ? '≥ ' : ''}${fmt(best.thr ?? best.avg)}).`;
+    if (best?.ease != null) s += ` Zona con menos competencia: <strong>reinos ${esc(best.label)}</strong> (10º lord: ${best.thrKind === 'lb' ? '≥ ' : ''}${fmt(best.thr ?? best.avg)}).`;
   } else s += ' Sin stats todavía: la facilidad aparecerá cuando haya datos (ver “Cómo funciona”).';
   $('#summary').innerHTML = s;
 }
@@ -228,22 +222,20 @@ function renderGroups(rows) {
   const html = [];
   for (const r of rows) {
     const id = r.g.id, open = state.open.has(id);
-    const merged = Object.entries(r.g.merged).map(([k, v]) => `<span class="tag" title="Fusionado ${esc(v)}">${k}·${esc(v)}</span>`).join('');
     html.push(`<tr class="g" tabindex="0" data-id="${esc(id)}" aria-expanded="${open}">
-      <td>${easeBadge(r.ease)}</td><td>${esc(r.label)}</td><td>${r.g.kingdoms[0]}–${r.g.kingdoms.at(-1)}</td><td>${r.size}</td>
-      <td>${r.mergedCount ? merged : '<span class="muted">0</span>'}</td><td>${thrCell(r)}</td><td>${fmt(r.top1)}</td>
+      <td>${easeBadge(r.ease)}</td><td>${esc(r.label)}</td><td>${thrCell(r)}</td><td>${fmt(r.top1)}</td>
       <td>${fmt(r.total)}</td><td>${fmt(r.avg)}</td><td>${fmt(r.maxk)}</td><td>${pct(r.growth)}</td>
       <td>${myCell(r, r.myRankTxt, r.thr, r.thrKind)}</td><td>${r.rivals == null ? fmt(null) : r.rivals}</td><td>${Math.round(r.coverage * 100)}%</td></tr>`);
-    if (open) html.push(`<tr class="detail"><td colspan="14">${groupDetail(r)}</td></tr>`);
+    if (open) html.push(`<tr class="detail"><td colspan="11">${groupDetail(r)}</td></tr>`);
   }
-  tb.innerHTML = html.join('') || '<tr><td colspan="14" class="muted">Ninguna zona cumple los filtros.</td></tr>';
+  tb.innerHTML = html.join('') || '<tr><td colspan="11" class="muted">Ninguna zona cumple los filtros.</td></tr>';
   syncSortHeaders('#t-groups', state.sort.groups);
 }
 
 function groupDetail(r) {
   const kRows = r.ks.map((k) => {
     const s = k.stats, p10 = s.p10_power ?? (k.players.length >= 10 ? k.players[9] : null);
-    return `<tr><td>${k.kingdom}${k.merged ? `<span class="tag">${esc(k.merged)}</span>` : ''}</td><td>${fmt(s.total_power)}</td><td>${fmt(s.lords)}</td>
+    return `<tr><td>${k.kingdom}</td><td>${fmt(s.total_power)}</td><td>${fmt(s.lords)}</td>
       <td>${fmt(s.top1_power ?? k.players[0])}</td><td>${fmt(p10)}</td><td>${fmt(s.t5_lords)}</td><td>${fmt(s.merits)}</td>
       <td>${r.my != null ? (rankOf(r.my, k.players) ? '#' + rankOf(r.my, k.players) : '—') : '—'}</td></tr>`;
   }).join('');
@@ -262,7 +254,7 @@ function renderKingdoms(groupRows) {
     if (kq && String(k.kingdom) !== kq) continue;
     const s = k.stats;
     rows.push({
-      r, k, ease: r.ease, kingdom: k.kingdom, label: r.label, merged: k.merged || '',
+      r, k, ease: r.ease, kingdom: k.kingdom, label: r.label, first: r.first,
       total: s.total_power ?? null, lords: s.lords ?? null, top1: s.top1_power ?? k.players[0] ?? null,
       p10: s.p10_power ?? (k.players.length >= 10 ? k.players[9] : null), t5: s.t5_lords ?? null, merits: s.merits ?? null,
       growth: growth7d([`${k.zone}:${k.kingdom}`]), thr: r.thr,
@@ -271,10 +263,10 @@ function renderKingdoms(groupRows) {
   }
   sortRows(rows, state.sort.kingdoms);
   $('#t-kingdoms tbody').innerHTML = rows.slice(0, 2000).map((x) => `<tr>
-    <td>${easeBadge(x.ease)}</td><td>${x.kingdom}</td><td>${esc(x.label)}</td><td>${x.merged ? `<span class="tag">${esc(x.merged)}</span>` : ''}</td>
+    <td>${easeBadge(x.ease)}</td><td>${x.kingdom}</td><td>${esc(x.label)}</td>
     <td>${fmt(x.total)}</td><td>${fmt(x.lords)}</td><td>${fmt(x.top1)}</td><td>${fmt(x.p10)}</td><td>${fmt(x.t5)}</td><td>${fmt(x.merits)}</td>
     <td>${pct(x.growth)}</td><td>${thrCell(x.r)}</td><td>${myCell(x.r, x.myRankK, null, null)}</td><td>${myCell(x.r, x.myRank, x.r.thr, x.r.thrKind)}</td></tr>`).join('')
-    || '<tr><td colspan="14" class="muted">Ningún reino cumple los filtros.</td></tr>';
+    || '<tr><td colspan="12" class="muted">Ningún reino cumple los filtros.</td></tr>';
   syncSortHeaders('#t-kingdoms', state.sort.kingdoms);
   state.lastKingdomRows = rows;
 }
@@ -330,13 +322,12 @@ function exportCSV() {
   let lines;
   if (state.view === 'kingdoms') {
     renderKingdoms(groups);
-    lines = [['ease', 'region', 'config', 'zone_no', 'kingdom', 'merged', 'total_power', 'lords', 'top1_power', 'p10_power', 't5_lords', 'merits', 'zone_top10_threshold']]
-      .concat(state.lastKingdomRows.map((x) => [x.ease, x.r.g.zone, x.r.g.config, x.r.g.group_no, x.kingdom, x.merged, x.total, x.lords, x.top1, x.p10, x.t5, x.merits, x.thr]));
+    lines = [['ease', 'kingdom', 'zone_kingdoms', 'total_power', 'lords', 'top1_power', 'p10_power', 't5_lords', 'merits', 'zone_top10_threshold']]
+      .concat(state.lastKingdomRows.map((x) => [x.ease, x.kingdom, x.label, x.total, x.lords, x.top1, x.p10, x.t5, x.merits, x.thr]));
   } else {
     sortRows(groups, state.sort.groups);
-    lines = [['ease', 'region', 'config', 'zone_no', 'first_kingdom', 'last_kingdom', 'kingdoms', 'merged', 'top10_threshold', 'threshold_kind', 'top1', 'total_power', 'avg_kingdom_power', 'max_kingdom_power', 'growth_7d', 'rivals_above_you', 'coverage']]
-      .concat(groups.map((r) => [r.ease, r.g.zone, r.g.config, r.g.group_no, r.g.kingdoms[0], r.g.kingdoms.at(-1), r.size,
-        Object.entries(r.g.merged).map(([k, v]) => `${k}(${v})`).join(' '), r.thr, r.thrKind, r.top1, r.total, r.avg, r.maxk, r.growth, r.rivals, r.coverage]));
+    lines = [['ease', 'first_kingdom', 'last_kingdom', 'top10_threshold', 'threshold_kind', 'top1', 'total_power', 'avg_kingdom_power', 'max_kingdom_power', 'growth_7d', 'rivals_above_you', 'coverage']]
+      .concat(groups.map((r) => [r.ease, r.g.kingdoms[0], r.g.kingdoms.at(-1), r.thr, r.thrKind, r.top1, r.total, r.avg, r.maxk, r.growth, r.rivals, r.coverage]));
   }
   const csv = lines.map((l) => l.map((v) => (v == null ? '' : String(v).includes(';') ? `"${v}"` : v)).join(';')).join('\n');
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `great-heights-${state.view === 'groups' ? 'zonas' : 'reinos'}.csv` });
@@ -344,7 +335,7 @@ function exportCSV() {
 }
 
 // ---------------------------------------------------------------- filtros persistentes (URL)
-const FILTERS = ['f-zone', 'f-config', 'f-kingdom', 'f-power', 'f-maxthr', 'f-maxavg', 'f-size', 'f-nomerged', 'f-onlymerged', 'f-withstats'];
+const FILTERS = ['f-kingdom', 'f-power', 'f-maxthr', 'f-maxavg', 'f-withstats'];
 function saveFilters() {
   const p = new URLSearchParams();
   for (const id of FILTERS) { const el = document.getElementById(id); const v = el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value; if (v) p.set(id.slice(2), v); }
@@ -375,7 +366,7 @@ for (const view of ['groups', 'kingdoms']) {
   document.querySelector(`#t-${view} thead`).addEventListener('click', (e) => {
     const th = e.target.closest('th'); if (!th) return;
     const [key, dir] = state.sort[view];
-    state.sort[view] = [th.dataset.key, key === th.dataset.key && dir === 'descending' ? 'ascending' : (key === th.dataset.key ? 'descending' : (th.dataset.type === 'text' || ['first', 'kingdom', 'thr', 'avg', 'total', 'top1', 'maxk', 'p10', 'myRank', 'myRankK', 'mergedCount', 'rivals'].includes(th.dataset.key) ? 'ascending' : 'descending'))];
+    state.sort[view] = [th.dataset.key, key === th.dataset.key && dir === 'descending' ? 'ascending' : (key === th.dataset.key ? 'descending' : (th.dataset.type === 'text' || ['first', 'kingdom', 'thr', 'avg', 'total', 'top1', 'maxk', 'p10', 'myRank', 'myRankK', 'rivals'].includes(th.dataset.key) ? 'ascending' : 'descending'))];
     render();
   });
 }

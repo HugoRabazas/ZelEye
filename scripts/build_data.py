@@ -106,6 +106,8 @@ def zone_and_id(raw_kingdom, raw_zone=None):
 def load_groups() -> list[dict]:
     groups = []
     for r in read_csv(DATA / "groups.csv"):
+        if r["zone"] != "global":  # solo interesan los reinos globales
+            continue
         merged = {}
         for tok in (r.get("merged_kingdoms") or "").split():
             m = re.fullmatch(r"(\d+)\(([^)]+)\)", tok)

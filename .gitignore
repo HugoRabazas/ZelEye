@@ -1,3 +1,4 @@
 site/data.json
 site/history.json
 __pycache__/
+data/stats/*_remote_*.csv

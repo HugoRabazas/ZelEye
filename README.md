@@ -45,6 +45,17 @@ Por eso el proceso diario usa fuentes legítimas:
     "players":  [{"kingdom": 338, "zone": "global", "name": "Lord", "alliance": "ABC", "power": 9.1e7}]}
    ```
 3. **Importar CSV local** (botón en la web): carga el CSV solo en tu navegador, sin subirlo.
+4. **Google Sheets (o cualquier CSV por URL), automático cada día**: ver abajo.
+
+### Google Sheets → web, automático
+
+1. Crea una hoja en Google Sheets e importa `data/plantilla_reinos.csv` (*Archivo → Importar*). Trae los 1024 reinos globales con las columnas vacías.
+2. Rellena lo que tengas: `total_power`, `p10_power` (poder del 10º lord del reino), `top1_power`, `lords`. Las filas vacías se ignoran.
+3. Opcional, para que el 10º de la zona sea exacto: crea otra pestaña con `kingdom, name, alliance, power` (los 10–20 lords más fuertes de cada reino).
+4. *Archivo → Compartir → Publicar en la web* → elige la pestaña → formato **CSV** → copia el enlace (uno por pestaña).
+5. En GitHub: *Settings → Secrets and variables → Actions → New repository secret*, nombre `STATS_CSV_URLS`, valor: los enlaces separados por espacios.
+
+Desde entonces, cada día a las 05:17 UTC el proceso descarga la hoja y publica la web. Cualquiera de tu alianza puede ir rellenando la hoja. Para no esperar al día siguiente: *Actions → Run workflow*.
 
 ### Columnas
 

@@ -28,6 +28,7 @@ jobs:
       - name: Recoger stats y generar data.json
         env:
           # Opcional: endpoint JSON autorizado por una web de stats (Settings → Secrets → Actions)
+          STATS_CSV_URLS: ${{ secrets.STATS_CSV_URLS }}   # p. ej. Google Sheet publicada como CSV
           STATS_API_URL: ${{ secrets.STATS_API_URL }}
           STATS_API_TOKEN: ${{ secrets.STATS_API_TOKEN }}
         run: python scripts/build_data.py

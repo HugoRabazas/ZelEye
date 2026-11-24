@@ -1,10 +1,10 @@
 # ZelEye · Great Heights Finder
 
-Web estática (GitHub Pages) para encontrar el **grupo y reino de Call of Dragons donde es más fácil entrar en el top 10 de Great Heights**.
+Web estática (GitHub Pages) para encontrar la **zona de Great Heights (Call of Dragons) con menos competencia para entrar en el top 10**.
 
 ## Idea
 
-En Great Heights compites contra todos los lords de los reinos de tu **grupo** (ver `data/groups.csv`). Lo que decide si entras en el top 10 es el **poder del 10º lord más fuerte del grupo**. La web calcula ese umbral para cada grupo, le da una nota de *facilidad* (0–100) y te dice en qué puesto quedarías con tu poder.
+En Great Heights compites contra todos los lords de los reinos de tu **grupo** (ver `data/groups.csv`). Cada grupo de reinos es una **zona**, y lo que decide si entras en el top 10 es el **poder del 10º lord más fuerte de la zona**. La web calcula ese umbral para cada zona, las ordena de menos a más competencia, le da una nota de *facilidad* (0–100) y te dice en qué puesto quedarías con tu poder.
 
 ## Estructura
 

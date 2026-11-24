@@ -132,7 +132,7 @@ function computeGroups() {
     const mergedCount = Object.keys(g.merged).length;
     return {
       g, ks, players, thr, thrKind,
-      label: `${g.zone} · ${g.config} · G${g.group_no}`,
+      label: `Zona ${g.group_no} · ${g.zone} · ${g.config}`,
       first: g.kingdoms[0], size: g.kingdoms.length, mergedCount,
       top1: top1s.length ? Math.max(...top1s) : null,
       total: totals.length ? totals.reduce((a, b) => a + b, 0) : null,
@@ -140,6 +140,7 @@ function computeGroups() {
       maxk: totals.length ? Math.max(...totals) : null,
       growth: growth7d(g.kingdoms.map((id) => `${g.zone}:${id}`)),
       myRank, myRankTxt, my,
+      rivals: my != null && players.length ? players.filter((p) => p > my).length : null,
       coverage: withStats / g.kingdoms.length,
     };
   });
@@ -169,7 +170,7 @@ function assignEase(rows) {
     const below = vals.filter((v) => v > m).length; // cuántos grupos son más difíciles
     r.ease = Math.round((below / (vals.length - 1)) * 100);
   }
-  return useThr ? 'poder del 10º del grupo' : 'poder medio por reino';
+  return useThr ? 'poder del 10º lord de la zona' : 'poder medio por reino';
 }
 
 // ---------------------------------------------------------------- render
@@ -213,10 +214,10 @@ function render() {
 function renderSummary(rows, basis) {
   const withThr = rows.filter((r) => r.thr != null);
   const best = sortRows([...rows], ['ease', 'descending'])[0];
-  let s = `<strong>${rows.length}</strong> grupos · <strong>${rows.reduce((a, r) => a + r.size, 0)}</strong> reinos.`;
+  let s = `<strong>${rows.length}</strong> zonas · <strong>${rows.reduce((a, r) => a + r.size, 0)}</strong> reinos.`;
   if (withThr.length || rows.some((r) => r.avg != null)) {
-    s += ` Facilidad basada en <strong>${basis}</strong>.`;
-    if (best?.ease != null) s += ` Mejor grupo: <strong>${esc(best.label)}</strong> (reinos ${best.g.kingdoms[0]}–${best.g.kingdoms.at(-1)}).`;
+    s += ` Competencia medida por el <strong>${basis}</strong>.`;
+    if (best?.ease != null) s += ` Zona con menos competencia: <strong>${esc(best.label)}</strong> (reinos ${best.g.kingdoms[0]}–${best.g.kingdoms.at(-1)}, 10º lord: ${best.thrKind === 'lb' ? '≥ ' : ''}${fmt(best.thr ?? best.avg)}).`;
   } else s += ' Sin stats todavía: la facilidad aparecerá cuando haya datos (ver “Cómo funciona”).';
   $('#summary').innerHTML = s;
 }
@@ -232,10 +233,10 @@ function renderGroups(rows) {
       <td>${easeBadge(r.ease)}</td><td>${esc(r.label)}</td><td>${r.g.kingdoms[0]}–${r.g.kingdoms.at(-1)}</td><td>${r.size}</td>
       <td>${r.mergedCount ? merged : '<span class="muted">0</span>'}</td><td>${thrCell(r)}</td><td>${fmt(r.top1)}</td>
       <td>${fmt(r.total)}</td><td>${fmt(r.avg)}</td><td>${fmt(r.maxk)}</td><td>${pct(r.growth)}</td>
-      <td>${myCell(r, r.myRankTxt, r.thr, r.thrKind)}</td><td>${Math.round(r.coverage * 100)}%</td></tr>`);
-    if (open) html.push(`<tr class="detail"><td colspan="13">${groupDetail(r)}</td></tr>`);
+      <td>${myCell(r, r.myRankTxt, r.thr, r.thrKind)}</td><td>${r.rivals == null ? fmt(null) : r.rivals}</td><td>${Math.round(r.coverage * 100)}%</td></tr>`);
+    if (open) html.push(`<tr class="detail"><td colspan="14">${groupDetail(r)}</td></tr>`);
   }
-  tb.innerHTML = html.join('') || '<tr><td colspan="13" class="muted">Ningún grupo cumple los filtros.</td></tr>';
+  tb.innerHTML = html.join('') || '<tr><td colspan="14" class="muted">Ninguna zona cumple los filtros.</td></tr>';
   syncSortHeaders('#t-groups', state.sort.groups);
 }
 
@@ -249,9 +250,9 @@ function groupDetail(r) {
   const top = r.ks.flatMap((k) => (k.top_names || []).map((t) => [...t, k.kingdom])).sort((a, b) => b[2] - a[2]).slice(0, 10);
   const topHtml = top.length
     ? `<table class="mini"><thead><tr><th>#</th><th>Lord</th><th>Alianza</th><th>Reino</th><th>Poder</th></tr></thead><tbody>${top.map((t, i) => `<tr><td>${i + 1}</td><td>${esc(t[0])}</td><td>${esc(t[1])}</td><td>${t[3]}</td><td>${fmt(t[2])}</td></tr>`).join('')}</tbody></table>`
-    : '<p class="muted">Sin lista de jugadores para este grupo.</p>';
-  return `<div class="detail-grid"><div><h4>Reinos del grupo</h4><table class="mini"><thead><tr><th>Reino</th><th>Poder</th><th>Lords</th><th>Top 1</th><th>10º</th><th>T5</th><th>Méritos</th><th>Tu puesto</th></tr></thead><tbody>${kRows}</tbody></table></div>
-    <div><h4>Top 10 conocido del grupo</h4>${topHtml}</div></div>`;
+    : '<p class="muted">Sin lista de jugadores para esta zona.</p>';
+  return `<div class="detail-grid"><div><h4>Reinos de la zona</h4><table class="mini"><thead><tr><th>Reino</th><th>Poder</th><th>Lords</th><th>Top 1</th><th>10º</th><th>T5</th><th>Méritos</th><th>Tu puesto</th></tr></thead><tbody>${kRows}</tbody></table></div>
+    <div><h4>Top 10 conocido de la zona</h4>${topHtml}</div></div>`;
 }
 
 function renderKingdoms(groupRows) {
@@ -329,16 +330,16 @@ function exportCSV() {
   let lines;
   if (state.view === 'kingdoms') {
     renderKingdoms(groups);
-    lines = [['ease', 'zone', 'config', 'group', 'kingdom', 'merged', 'total_power', 'lords', 'top1_power', 'p10_power', 't5_lords', 'merits', 'group_top10_threshold']]
+    lines = [['ease', 'region', 'config', 'zone_no', 'kingdom', 'merged', 'total_power', 'lords', 'top1_power', 'p10_power', 't5_lords', 'merits', 'zone_top10_threshold']]
       .concat(state.lastKingdomRows.map((x) => [x.ease, x.r.g.zone, x.r.g.config, x.r.g.group_no, x.kingdom, x.merged, x.total, x.lords, x.top1, x.p10, x.t5, x.merits, x.thr]));
   } else {
     sortRows(groups, state.sort.groups);
-    lines = [['ease', 'zone', 'config', 'group', 'first_kingdom', 'last_kingdom', 'kingdoms', 'merged', 'top10_threshold', 'threshold_kind', 'top1', 'total_power', 'avg_kingdom_power', 'max_kingdom_power', 'growth_7d', 'coverage']]
+    lines = [['ease', 'region', 'config', 'zone_no', 'first_kingdom', 'last_kingdom', 'kingdoms', 'merged', 'top10_threshold', 'threshold_kind', 'top1', 'total_power', 'avg_kingdom_power', 'max_kingdom_power', 'growth_7d', 'rivals_above_you', 'coverage']]
       .concat(groups.map((r) => [r.ease, r.g.zone, r.g.config, r.g.group_no, r.g.kingdoms[0], r.g.kingdoms.at(-1), r.size,
-        Object.entries(r.g.merged).map(([k, v]) => `${k}(${v})`).join(' '), r.thr, r.thrKind, r.top1, r.total, r.avg, r.maxk, r.growth, r.coverage]));
+        Object.entries(r.g.merged).map(([k, v]) => `${k}(${v})`).join(' '), r.thr, r.thrKind, r.top1, r.total, r.avg, r.maxk, r.growth, r.rivals, r.coverage]));
   }
   const csv = lines.map((l) => l.map((v) => (v == null ? '' : String(v).includes(';') ? `"${v}"` : v)).join(';')).join('\n');
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `great-heights-${state.view}.csv` });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `great-heights-${state.view === 'groups' ? 'zonas' : 'reinos'}.csv` });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
@@ -374,7 +375,7 @@ for (const view of ['groups', 'kingdoms']) {
   document.querySelector(`#t-${view} thead`).addEventListener('click', (e) => {
     const th = e.target.closest('th'); if (!th) return;
     const [key, dir] = state.sort[view];
-    state.sort[view] = [th.dataset.key, key === th.dataset.key && dir === 'descending' ? 'ascending' : (key === th.dataset.key ? 'descending' : (th.dataset.type === 'text' || ['first', 'kingdom', 'thr', 'avg', 'total', 'top1', 'maxk', 'p10', 'myRank', 'myRankK', 'mergedCount'].includes(th.dataset.key) ? 'ascending' : 'descending'))];
+    state.sort[view] = [th.dataset.key, key === th.dataset.key && dir === 'descending' ? 'ascending' : (key === th.dataset.key ? 'descending' : (th.dataset.type === 'text' || ['first', 'kingdom', 'thr', 'avg', 'total', 'top1', 'maxk', 'p10', 'myRank', 'myRankK', 'mergedCount', 'rivals'].includes(th.dataset.key) ? 'ascending' : 'descending'))];
     render();
   });
 }
